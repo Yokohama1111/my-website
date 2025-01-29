@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -137,30 +138,41 @@
     // CSVダウンロード処理
     const PASSWORD = "yokogei2025";
     function downloadCSV() {
-      if (attendanceRecords.length === 0) {
-        alert("出席記録がありません！");
-        return;
-      }
+  if (attendanceRecords.length === 0) {
+    alert("出席記録がありません！");
+    return;
+  }
 
-      const userPassword = prompt("パスワードを入力してください:");
-      if (userPassword !== PASSWORD) {
-        alert("パスワードが間違っています。");
-        return;
-      }
+  const userPassword = prompt("パスワードを入力してください:");
+  if (userPassword !== PASSWORD) {
+    alert("パスワードが間違っています。");
+    return;
+  }
 
-      const header = "ID,名前,タイムスタンプ\n";
-      const rows = attendanceRecords.map(record => `${record.id},${record.name},${record.timestamp}`).join("\n");
-      const csvContent = header + rows;
+  const header = "ID,名前,タイムスタンプ\n";
+  const rows = attendanceRecords.map(record => `${record.id},${record.name},${record.timestamp}`).join("\n");
+  const csvContent = header + rows;
 
-      const blob = new Blob([csvContent], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "attendance.csv";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
+  // UTF-8 BOMを追加して、文字化けを防ぐ
+  const BOM = "\uFEFF"; // UTF-8 BOM
+  const csvWithBOM = BOM + csvContent;
+
+  // UTF-8エンコードを使用して文字列をバイト列に変換
+  const encoder = new TextEncoder();
+  const encodedCsv = encoder.encode(csvWithBOM);
+
+  const blob = new Blob([encodedCsv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "attendance.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+
+
 
     // CSVダウンロードボタンのイベントリスナーを設定
     downloadCSVButton.addEventListener("click", downloadCSV);
