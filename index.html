@@ -168,21 +168,22 @@
 
     // スタートボタンを押したときの動作
     startButton.addEventListener("click", () => {
-      startScreen.style.display = "none";
-      scanner.style.display = "block";
+  startScreen.style.display = "none";
+  scanner.style.display = "block";
 
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-        .then((stream) => {
-          video.srcObject = stream;
-          video.setAttribute("playsinline", true);
-          video.play();
-          requestAnimationFrame(scanQRCode);
-        })
-        .catch((error) => {
-          console.error("カメラの起動に失敗しました:", error);
-          alert("カメラが利用できません。");
-        });
+  // 前面カメラを使用する設定
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+    .then((stream) => {
+      video.srcObject = stream;
+      video.setAttribute("playsinline", true);
+      video.play();
+      requestAnimationFrame(scanQRCode);
+    })
+    .catch((error) => {
+      console.error("カメラの起動に失敗しました:", error);
+      alert("カメラが利用できません。");
     });
+});
 
     // QRコードのスキャン処理
     function scanQRCode() {
