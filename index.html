@@ -153,18 +153,24 @@
   const rows = attendanceRecords.map(record => `${record.id},${record.name},${record.timestamp}`).join("\n");
   const csvContent = header + rows;
 
-  // CSVの内容をUTF-8エンコードして、data URLを生成
-  const encodedCsvContent = encodeURIComponent(csvContent);
-  const dataUrl = `data:text/csv;charset=utf-8,${encodedCsvContent}`;
+  // UTF-8 BOMを追加して、文字化けを防ぐ
+  const BOM = "\uFEFF"; // UTF-8 BOM
+  const csvWithBOM = BOM + csvContent;
 
-  // data URLを使ってダウンロード
+  // UTF-8エンコードを使用して文字列をバイト列に変換
+  const encoder = new TextEncoder();
+  const encodedCsv = encoder.encode(csvWithBOM);
+
+  const blob = new Blob([encodedCsv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = dataUrl;
+  a.href = url;
   a.download = "attendance.csv";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
 }
+
 
 
 
