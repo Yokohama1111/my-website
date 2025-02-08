@@ -199,8 +199,12 @@
 });
 
     // QRコードのスキャン処理
+    let isScanning = false; // スキャン中かどうかを示すフラグ
+
     function scanQRCode() {
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+  if (video.readyState === video.HAVE_ENOUGH_DATA && !isScanning) {
+    isScanning = true;  // スキャン中に設定
+
     canvasElement.height = video.videoHeight;
     canvasElement.width = video.videoWidth;
     canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
@@ -213,13 +217,14 @@
       const timestamp = new Date().toLocaleString();  // 現在の時刻を取得
 
       if (id && name) {
-        // 出席記録に追加
+        // 出席記録にIDと名前、タイムスタンプを追加
         attendanceRecords.push({ id, name, timestamp });
         localStorage.setItem("attendanceRecords", JSON.stringify(attendanceRecords));
 
         resultList.innerHTML = "";
         const listItem = document.createElement("li");
-        listItem.textContent = `ID: ${id}, 名前: ${name}, 時間: ${timestamp}`;
+        // ID, 名前, 時間をこのフォーマットで表示
+        listItem.textContent = `${id}, ${name}, 時間: ${timestamp}`;
         resultList.appendChild(listItem);
 
         // スプレッドシートにデータを送信
@@ -231,9 +236,17 @@
         alert("QRコードの形式が正しくありません！");
       }
     }
+
+    // スキャン終了後に再びスキャンできるようにフラグをリセット
+    setTimeout(() => {
+      isScanning = false; // スキャン可能に戻す
+    }, 1000); // 1秒後にスキャン可能にする
   }
-  requestAnimationFrame(scanQRCode);
+
+  requestAnimationFrame(scanQRCode); // 継続的にスキャン
 }
+
+
 
 // Googleスプレッドシートにデータを送信する関数
 function sendDataToGoogleSheets(id, name, timestamp) {
