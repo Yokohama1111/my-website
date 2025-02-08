@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -199,42 +200,37 @@
 
     // QRコードのスキャン処理
     function scanQRCode() {
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
-    canvasElement.height = video.videoHeight;
-    canvasElement.width = video.videoWidth;
-    canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-    let imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-    let code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvasElement.height = video.videoHeight;
+        canvasElement.width = video.videoWidth;
+        canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+        let imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+        let code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
 
-    if (code) {
-      const qrData = code.data;
-      const [id, name] = qrData.split(",");
-      const timestamp = new Date().toLocaleString();
+        if (code) {
+          const qrData = code.data;
+          const [id, name] = qrData.split(",");
+          const timestamp = new Date().toLocaleString();
 
-      if (id && name) {
-        attendanceRecords.push({ id, name, timestamp });
-        localStorage.setItem("attendanceRecords", JSON.stringify(attendanceRecords));
+          if (id && name) {
+            attendanceRecords.push({ id, name, timestamp });
+            localStorage.setItem("attendanceRecords", JSON.stringify(attendanceRecords));
+            resultList.innerHTML = "";
+            const listItem = document.createElement("li");
+            listItem.textContent = `: ${name}, 時間: ${timestamp}`;
+            resultList.appendChild(listItem);
 
-        // Googleスプレッドシートに送信
-        sendAttendance(id, name);
+            scanner.style.display = "none";
+            resultScreen.style.display = "block";
 
-        resultList.innerHTML = "";
-        const listItem = document.createElement("li");
-        listItem.textContent = `: ${name}, 時間: ${timestamp}`;
-        resultList.appendChild(listItem);
-
-        scanner.style.display = "none";
-        resultScreen.style.display = "block";
-
-        return;
-      } else {
-        alert("QRコードの形式が正しくありません！");
+            return;
+          } else {
+            alert("QRコードの形式が正しくありません！");
+          }
+        }
       }
+      requestAnimationFrame(scanQRCode);
     }
-  }
-  requestAnimationFrame(scanQRCode);
-}
-
 
     // QRコードスキャン画面の戻るボタンの動作
 backToStartButton.addEventListener("click", () => {
@@ -268,17 +264,3 @@ backButton.addEventListener("click", () => {
   </script>
 </body>
 </html>
-
-
-const SPREADSHEET_URL = "https://script.google.com/macros/s/AKfycby9HECPGA98MzfUNn11quECx0E0Dgpyk6Ir4mVpzOcMBSrIDaz8YedOae7eupSNHqUZnA/exec";  // スプレッドシートのURL
-　　　　　　　　　　　　　 
-function sendAttendance(id, name) {
-  fetch(SPREADSHEET_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, name })
-  })
-  .then(response => response.text())
-  .then(data => console.log("送信成功:", data))
-  .catch(error => console.error("エラー:", error));
-}
