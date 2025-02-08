@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -198,6 +197,24 @@
     });
 });
 
+
+async function uploadAttendanceRecord(id, name, timestamp) {
+  const response = await fetch("https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbww2inpdOXfh641Lh3rqFG4oyhiXi401cnLHiAIogAFs2Drk56tyH2u68ttaWA19d3JMA/exec/exec", {
+    method: "POST",
+    body: JSON.stringify({ id, name, timestamp }),
+    headers: { "Content-Type": "application/json" }
+  });
+
+  const result = await response.json();
+  if (result.message) {
+    console.log(result.message);  // 成功時のメッセージ
+  } else {
+    console.error(result.error);  // エラー時のメッセージ
+  }
+}
+
+
+
     // QRコードのスキャン処理
     function scanQRCode() {
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
@@ -215,6 +232,10 @@
           if (id && name) {
             attendanceRecords.push({ id, name, timestamp });
             localStorage.setItem("attendanceRecords", JSON.stringify(attendanceRecords));
+            
+            // スプレッドシートにデータを送信
+            uploadAttendanceRecord(id, name, timestamp);
+            
             resultList.innerHTML = "";
             const listItem = document.createElement("li");
             listItem.textContent = `: ${name}, 時間: ${timestamp}`;
@@ -231,6 +252,7 @@
       }
       requestAnimationFrame(scanQRCode);
     }
+
 
     // QRコードスキャン画面の戻るボタンの動作
 backToStartButton.addEventListener("click", () => {
@@ -264,3 +286,4 @@ backButton.addEventListener("click", () => {
   </script>
 </body>
 </html>
+
