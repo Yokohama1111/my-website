@@ -223,8 +223,9 @@
 
         resultList.innerHTML = "";
         const listItem = document.createElement("li");
-        // ID, 名前, 時間をこのフォーマットで表示
-        listItem.textContent = `ID: ${id},   名前: ${name},   時間: ${timestamp}`;
+        
+        // ID, 名前, 時間の間に空白を挿入
+        listItem.textContent = `ID: ${id},       名前: ${name},       時間: ${timestamp}`;
         resultList.appendChild(listItem);
 
         // スプレッドシートにデータを送信
