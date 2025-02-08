@@ -198,7 +198,7 @@
 });
 
 async function uploadAttendanceRecord(id, name, timestamp) {
-  const response = await fetch("https://script.google.com/macros/s/AKfycbxn_qofMUWaatP0mbjtE8V1XV16Q81VKEe3gefK-NAyLp_WUxi3Ulo1TgiY2FudX9LR/exec", {
+  const response = await fetch("https://script.google.com/macros/s/AKfycbx-dPJBYb_vRNqBt0k_wn_r6TG1sf256F5pKZK2Z7_huPj1pfEwLRl4jatFaqvxIF23ZA/exec", {
     method: "POST",
     body: JSON.stringify({ id, name, timestamp }),
     headers: { "Content-Type": "application/json" }
