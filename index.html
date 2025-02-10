@@ -251,7 +251,7 @@
 
 // Googleスプレッドシートにデータを送信する関数
 function sendDataToGoogleSheets(id, name, timestamp) {
-  const scriptUrl = "https://script.google.com/macros/s/AKfycbyBMXC8uUniA8rV12z57o5jA9coj-XMjsQ0HhBzw_58hDqWzSRqn5rFZzy-HsJdeoo3Qg/exec"; // ここにスクリプトURLを入れてください
+  const scriptUrl = "https://script.google.com/macros/s/AKfycbzADJrYo4gR5goLmiOOnFn5RqBpHkYsy5wxEawpa7TsmEpH9NEuG7oviGNX9HmCrrmO/exec"; // ここにスクリプトURLを入れてください
   
   const url = `${scriptUrl}?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&timestamp=${encodeURIComponent(timestamp)}`;
 
