@@ -248,22 +248,20 @@
 }
 
 
-
 // Googleスプレッドシートにデータを送信する関数
 function sendDataToGoogleSheets(id, name, timestamp) {
-  console.log("sendDataToGoogleSheets called", id, name, timestamp); // デバッグ用
-
-  const scriptUrl = "https://script.google.com/macros/s/AKfycbzC4ZHJ-EyAElvj7X0OnLO8V4-EYL-wqvt0cmVBbQBSVXVjPlr5r97bSDry_dVaIup0QQ/exec"; // スクリプトURL
-
+  const scriptUrl = "https://script.google.com/macros/s/AKfycbzC4ZHJ-EyAElvj7X0OnLO8V4-EYL-wqvt0cmVBbQBSVXVjPlr5r97bSDry_dVaIup0QQ/exec"; // ここにスクリプトURLを入れてください
+  
   const url = `${scriptUrl}?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&timestamp=${encodeURIComponent(timestamp)}`;
 
+  // fetchを使ってデータを送信
   fetch(url)
-    .then(response => response.text())
+    .then(response => response.text())  // サーバーからのレスポンスをテキストとして受け取る
     .then(data => {
-      console.log('データがスプレッドシートに追加されました:', data);
+      console.log('データがスプレッドシートに追加されました:', data);  // スプレッドシートに追加されたデータをログに出力
     })
     .catch(error => {
-      console.error('エラーが発生しました:', error);
+      console.error('エラーが発生しました:', error);  // エラーが発生した場合にエラーログを表示
     });
 }
     
