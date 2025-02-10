@@ -190,7 +190,7 @@
     }
 
     function sendDataToGoogleSheets(id, name, timestamp) {
-      const scriptUrl = "https://script.google.com/macros/s/AKfycbzt_Dkl6DBD32aqbJZkuhmdqPTe8eKBJkubYi2KHDvSfiBXnHNbJM8DV7OrTgiapN7T/exec";
+      const scriptUrl = "https://script.google.com/macros/s/AKfycbz-IGNP9JUyVLuRmZLahmQzkl3BaPlBO3YBLtZkM57-XELI-sBzlmD_GsuNug-NDlts/exec";
       const url = `${scriptUrl}?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&timestamp=${encodeURIComponent(timestamp)}`;
 
       fetch(url)
