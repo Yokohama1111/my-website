@@ -5,7 +5,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QRコードリーダー</title>
   <style>
-    /* ここは元のCSSコードのままです。 */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+    }
+
+    #startScreen {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      height: 100%;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+
+    button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    #startButton {
+      font-size: 24px;
+      padding: 20px 40px;
+      border-radius: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+    }
+
+    #startButton:hover {
+      background-color: #0056b3;
+    }
+
+    #downloadCSVTopButton {
+      position: absolute;
+      top: 10px;
+      right: -400px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #scanner, #resultScreen {
+      display: none;
+    }
+
+    #resultScreen {
+      position: relative;
+      padding: 20px;
+    }
+
+    #downloadCSVButton {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    video {
+      border: 1px solid black;
+    }
   </style>
 </head>
 <body>
@@ -13,7 +89,7 @@
   <div id="startScreen">
     <h2>KYOKEI</h2>
     <h2>横浜芸術高等専修学校</h2>
-    <h1>登校・帰宅記録</h1>
+    <h1>登校記録</h1>
     <button id="startButton">QRコード</button>
     <button id="downloadCSVTopButton">CSVダウンロード</button>
   </div>
@@ -30,7 +106,7 @@
   <div id="resultScreen">
     <h3>KYOKEI</h3>
     <h3>横浜芸術高等専修学校</h3>
-    <h2>記録しました</h2>
+    <h2>登校を記録しました</h2>
     <ul id="resultList"></ul>
     <button id="downloadCSVButton">CSVをダウンロード</button>
     <button id="backButton">トップ画面へ戻る</button>
@@ -68,15 +144,13 @@
         return;
       }
 
-      const header = "ID,名前,ステータス,タイムスタンプ\n";
-      const rows = attendanceRecords.map(record => `${record.id},${record.name},${record.status},${record.timestamp}`).join("\n");
+      const header = "ID,名前,行動,タイムスタンプ\n";
+      const rows = attendanceRecords.map(record => `${record.id},${record.name},${record.action},${record.timestamp}`).join("\n");
       const csvContent = header + rows;
 
-      // UTF-8 BOMを追加して、文字化けを防ぐ
       const BOM = "\uFEFF"; // UTF-8 BOM
       const csvWithBOM = BOM + csvContent;
 
-      // UTF-8エンコードを使用して文字列をバイト列に変換
       const encoder = new TextEncoder();
       const encodedCsv = encoder.encode(csvWithBOM);
 
@@ -90,7 +164,6 @@
       document.body.removeChild(a);
     }
 
-    // CSVダウンロードボタンのイベントリスナーを設定
     downloadCSVButton.addEventListener("click", downloadCSV);
     downloadCSVTopButton.addEventListener("click", downloadCSV);
 
@@ -118,7 +191,7 @@
 
     function scanQRCode() {
       if (video.readyState === video.HAVE_ENOUGH_DATA && !isScanning) {
-        isScanning = true;  // スキャン中に設定
+        isScanning = true;
 
         canvasElement.height = video.videoHeight;
         canvasElement.width = video.videoWidth;
@@ -128,22 +201,27 @@
 
         if (code) {
           const qrData = code.data;
-          const [id, name, status] = qrData.split(",");  // QRコードからID、名前、ステータスを分ける
-          const timestamp = new Date().toLocaleString();  // 現在の時刻を取得
+          const [id, name] = qrData.split(","); // QRコードからIDと名前を分ける
+          const timestamp = new Date().toLocaleString(); // 現在の時刻を取得
 
-          if (id && name && status) {
-            // 出席記録にID、名前、ステータス、タイムスタンプを追加
-            attendanceRecords.push({ id, name, status, timestamp });
+          if (id && name) {
+            let action = "登校"; // 初回は登校とする
+
+            // 同じIDの記録があるかチェック
+            const existingRecord = attendanceRecords.find(record => record.id === id && isSameDay(record.timestamp, timestamp));
+            
+            if (existingRecord) {
+              action = "帰宅"; // 同じ日に登校記録がある場合、帰宅にする
+            }
+
+            // 出席記録にIDと名前、行動（登校/帰宅）、タイムスタンプを追加
+            attendanceRecords.push({ id, name, action, timestamp });
             localStorage.setItem("attendanceRecords", JSON.stringify(attendanceRecords));
 
             resultList.innerHTML = "";
             const listItem = document.createElement("li");
-            // ID, 名前, ステータス, 時間をこのフォーマットで表示
-            listItem.textContent = `${id}, ${name}, ステータス: ${status}, 時間: ${timestamp}`;
+            listItem.textContent = `${id}, ${name}, ${action}, 時間: ${timestamp}`;
             resultList.appendChild(listItem);
-
-            // スプレッドシートにデータを送信
-            sendDataToGoogleSheets(id, name, status, timestamp);
 
             scanner.style.display = "none";
             resultScreen.style.display = "block";
@@ -152,7 +230,6 @@
           }
         }
 
-        // スキャン終了後に再びスキャンできるようにフラグをリセット
         setTimeout(() => {
           isScanning = false; // スキャン可能に戻す
         }, 1000); // 1秒後にスキャン可能にする
@@ -161,35 +238,25 @@
       requestAnimationFrame(scanQRCode); // 継続的にスキャン
     }
 
-    // Googleスプレッドシートにデータを送信する関数
-    function sendDataToGoogleSheets(id, name, status, timestamp) {
-      const scriptUrl = "https://script.google.com/macros/s/AKfycby2-h7jMj2zV_4wL9ULobWSVPmhndSxjT77WMA3OAjavz_y4MG_YgZlsT5DERupIBZB/exec"; // ここにスクリプトURLを入れてください
-      
-      const url = `${scriptUrl}?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&status=${encodeURIComponent(status)}&timestamp=${encodeURIComponent(timestamp)}`;
-
-      // fetchを使ってデータを送信
-      fetch(url)
-        .then(response => response.text())
-        .then(data => {
-          console.log('データがスプレッドシートに追加されました:', data);
-        })
-        .catch(error => {
-          console.error('エラーが発生しました:', error);
-        });
+    // 同じ日かどうかを確認する関数
+    function isSameDay(timestamp1, timestamp2) {
+      const date1 = new Date(timestamp1);
+      const date2 = new Date(timestamp2);
+      return date1.getFullYear() === date2.getFullYear() &&
+             date1.getMonth() === date2.getMonth() &&
+             date1.getDate() === date2.getDate();
     }
 
-    // QRコードスキャン画面の戻るボタンの動作
+    // 結果画面の戻るボタンの動作
     backToStartButton.addEventListener("click", () => {
       scanner.style.display = "none";
       startScreen.style.display = "block";
 
-      // カメラを停止
       if (video.srcObject) {
         video.srcObject.getTracks().forEach(track => track.stop());
         video.srcObject = null;
       }
 
-      // 出席リストをクリア
       resultList.innerHTML = "";
     });
 
@@ -197,14 +264,6 @@
     backButton.addEventListener("click", () => {
       resultScreen.style.display = "none";
       startScreen.style.display = "block";
-
-      // 出席リストをクリア
-      resultList.innerHTML = "";
-
-      if (video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
-      }
     });
   </script>
 </body>
