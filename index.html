@@ -46,6 +46,7 @@
       background-color: #007bff;
       color: white;
       border: none;
+      cursor: pointer;
     }
 
     #startButton:hover {
@@ -106,7 +107,7 @@
   <div id="resultScreen">
     <h3>KYOKEI</h3>
     <h3>横浜芸術高等専修学校</h3>
-    <h2>登校を記録しました</h2>
+    <h2>登校または帰宅を記録しました</h2>
     <ul id="resultList"></ul>
     <button id="downloadCSVButton">CSVをダウンロード</button>
     <button id="backButton">トップ画面へ戻る</button>
@@ -144,13 +145,15 @@
         return;
       }
 
-      const header = "ID,名前,行動,タイムスタンプ\n";
-      const rows = attendanceRecords.map(record => `${record.id},${record.name},${record.action},${record.timestamp}`).join("\n");
+      const header = "ID,名前,タイムスタンプ,登校/帰宅\n";
+      const rows = attendanceRecords.map(record => `${record.id},${record.name},${record.timestamp},${record.leave ? '帰宅' : '登校'}`).join("\n");
       const csvContent = header + rows;
 
+      // UTF-8 BOMを追加して、文字化けを防ぐ
       const BOM = "\uFEFF"; // UTF-8 BOM
       const csvWithBOM = BOM + csvContent;
 
+      // UTF-8エンコードを使用して文字列をバイト列に変換
       const encoder = new TextEncoder();
       const encodedCsv = encoder.encode(csvWithBOM);
 
@@ -164,6 +167,7 @@
       document.body.removeChild(a);
     }
 
+    // CSVダウンロードボタンのイベントリスナーを設定
     downloadCSVButton.addEventListener("click", downloadCSV);
     downloadCSVTopButton.addEventListener("click", downloadCSV);
 
@@ -187,7 +191,7 @@
     });
 
     // QRコードのスキャン処理
-    let isScanning = false; // スキャン中かどうかを示すフラグ
+    let isScanning = false;
 
     function scanQRCode() {
       if (video.readyState === video.HAVE_ENOUGH_DATA && !isScanning) {
@@ -201,27 +205,34 @@
 
         if (code) {
           const qrData = code.data;
-          const [id, name] = qrData.split(","); // QRコードからIDと名前を分ける
-          const timestamp = new Date().toLocaleString(); // 現在の時刻を取得
+          const [id, name] = qrData.split(",");
+          const timestamp = new Date().toLocaleString();
 
           if (id && name) {
-            let action = "登校"; // 初回は登校とする
+            // 同じ日付で既に登校している場合、帰宅として記録する
+            const today = new Date().toLocaleDateString();
+            const record = attendanceRecords.find(record => record.id === id && record.date === today);
 
-            // 同じIDの記録があるかチェック
-            const existingRecord = attendanceRecords.find(record => record.id === id && isSameDay(record.timestamp, timestamp));
-            
-            if (existingRecord) {
-              action = "帰宅"; // 同じ日に登校記録がある場合、帰宅にする
+            if (record) {
+              // 登校が記録されている場合は帰宅として記録
+              record.leave = true;
+              record.timestampLeave = timestamp;
+              alert(`${name}さん、帰宅記録を追加しました`);
+            } else {
+              // 登校記録がない場合は登校として記録
+              attendanceRecords.push({ id, name, date: today, timestamp, leave: false });
+              alert(`${name}さん、登校記録を追加しました`);
             }
 
-            // 出席記録にIDと名前、行動（登校/帰宅）、タイムスタンプを追加
-            attendanceRecords.push({ id, name, action, timestamp });
             localStorage.setItem("attendanceRecords", JSON.stringify(attendanceRecords));
 
             resultList.innerHTML = "";
             const listItem = document.createElement("li");
-            listItem.textContent = `${id}, ${name}, ${action}, 時間: ${timestamp}`;
+            listItem.textContent = `${id}, ${name}, ${record.leave ? '帰宅' : '登校'}, 時間: ${timestamp}`;
             resultList.appendChild(listItem);
+
+            // スプレッドシートにデータを送信
+            sendDataToGoogleSheets(id, name, timestamp, record.leave);
 
             scanner.style.display = "none";
             resultScreen.style.display = "block";
@@ -231,23 +242,29 @@
         }
 
         setTimeout(() => {
-          isScanning = false; // スキャン可能に戻す
-        }, 1000); // 1秒後にスキャン可能にする
+          isScanning = false;
+        }, 1000);
       }
 
-      requestAnimationFrame(scanQRCode); // 継続的にスキャン
+      requestAnimationFrame(scanQRCode);
     }
 
-    // 同じ日かどうかを確認する関数
-    function isSameDay(timestamp1, timestamp2) {
-      const date1 = new Date(timestamp1);
-      const date2 = new Date(timestamp2);
-      return date1.getFullYear() === date2.getFullYear() &&
-             date1.getMonth() === date2.getMonth() &&
-             date1.getDate() === date2.getDate();
+    // Googleスプレッドシートにデータを送信する関数
+    function sendDataToGoogleSheets(id, name, timestamp, leave) {
+      const scriptUrl = "https://script.google.com/macros/s/AKfycby2-h7jMj2zV_4wL9ULobWSVPmhndSxjT77WMA3OAjavz_y4MG_YgZlsT5DERupIBZB/exec";
+      const url = `${scriptUrl}?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&timestamp=${encodeURIComponent(timestamp)}&leave=${leave}`;
+
+      fetch(url)
+        .then(response => response.text())
+        .then(data => {
+          console.log('データがスプレッドシートに追加されました:', data);
+        })
+        .catch(error => {
+          console.error('エラーが発生しました:', error);
+        });
     }
 
-    // 結果画面の戻るボタンの動作
+    // QRコードスキャン画面の戻るボタンの動作
     backToStartButton.addEventListener("click", () => {
       scanner.style.display = "none";
       startScreen.style.display = "block";
@@ -264,6 +281,13 @@
     backButton.addEventListener("click", () => {
       resultScreen.style.display = "none";
       startScreen.style.display = "block";
+
+      resultList.innerHTML = "";
+
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
     });
   </script>
 </body>
