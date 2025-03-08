@@ -217,9 +217,11 @@
               // 登校が記録されている場合は帰宅として記録
               record.leave = true;
               record.timestampLeave = timestamp;
+              alert(`${name}さん、帰宅記録を追加しました`);
             } else {
               // 登校記録がない場合は登校として記録
               attendanceRecords.push({ id, name, date: today, timestamp, leave: false });
+              alert(`${name}さん、登校記録を追加しました`);
             }
 
             localStorage.setItem("attendanceRecords", JSON.stringify(attendanceRecords));
