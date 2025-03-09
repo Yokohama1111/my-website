@@ -191,65 +191,66 @@
     });
 
     // QRコードのスキャン処理
-    let isScanning = false;
+let isScanning = false;
 
-    function scanQRCode() {
-      if (video.readyState === video.HAVE_ENOUGH_DATA && !isScanning) {
-        isScanning = true;
+function scanQRCode() {
+  if (video.readyState === video.HAVE_ENOUGH_DATA && !isScanning) {
+    isScanning = true;
 
-        canvasElement.height = video.videoHeight;
-        canvasElement.width = video.videoWidth;
-        canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-        let imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-        let code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
+    canvasElement.height = video.videoHeight;
+    canvasElement.width = video.videoWidth;
+    canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+    let imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+    let code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
 
-        if (code) {
-          const qrData = code.data;
-          const [id, name] = qrData.split(",");
-          const timestamp = new Date().toLocaleString();
+    if (code) {
+      const qrData = code.data;
+      const [id, name] = qrData.split(",");
+      const timestamp = new Date().toLocaleString();
 
-          if (id && name) {
-            // 同じ日付で既に登校している場合、帰宅として記録する
-            const today = new Date().toLocaleDateString();
-            const record = attendanceRecords.find(record => record.id === id && record.date === today);
+      if (id && name) {
+        // 同じ日付で既に登校している場合、帰宅として記録する
+        const today = new Date().toLocaleDateString();
+        const record = attendanceRecords.find(record => record.id === id && record.date === today);
 
-            if (record) {
-              // 登校が記録されている場合は帰宅として記録
-              record.leave = true;
-              record.timestampLeave = timestamp;
-              alert(`${name}さん、帰宅記録を追加しました`);
-            } else {
-              // 登校記録がない場合は登校として記録
-              attendanceRecords.push({ id, name, date: today, timestamp, leave: false });
-              alert(`${name}さん、登校記録を追加しました`);
-            }
-
-            localStorage.setItem("attendanceRecords", JSON.stringify(attendanceRecords));
-
-            resultList.innerHTML = "";
-            const listItem = document.createElement("li");
-            listItem.textContent = `${id}, ${name}, ${record.leave ? '帰宅' : '登校'}, 時間: ${timestamp}`;
-            resultList.appendChild(listItem);
-
-            // スプレッドシートにデータを送信
-            sendDataToGoogleSheets(id, name, timestamp, record.leave);
-
-            scanner.style.display = "none";
-            resultScreen.style.display = "block";
-          } else {
-            alert("QRコードの形式が正しくありません！");
-          }
+        if (record) {
+          // 登校が記録されている場合は帰宅として記録
+          record.leave = true;
+          record.timestampLeave = timestamp;
+          alert(`${name}さん、帰宅記録を追加しました`);
+        } else {
+          // 登校記録がない場合は登校として記録
+          attendanceRecords.push({ id, name, date: today, timestamp, leave: false });
+          alert(`${name}さん、登校記録を追加しました`);
         }
 
-        // スキャンが完了したらフラグをリセットして次のスキャンに備える
-        setTimeout(() => {
-          isScanning = false;
-        }, 1000); // 少し時間をおいて再スキャン
-      }
+        localStorage.setItem("attendanceRecords", JSON.stringify(attendanceRecords));
 
-      // 再帰的にscanQRCodeを呼び出してスキャンを継続
-      requestAnimationFrame(scanQRCode);
+        resultList.innerHTML = "";
+        const listItem = document.createElement("li");
+        listItem.textContent = `${id}, ${name}, ${record.leave ? '帰宅' : '登校'}, 時間: ${timestamp}`;
+        resultList.appendChild(listItem);
+
+        // スプレッドシートにデータを送信
+        sendDataToGoogleSheets(id, name, timestamp, record.leave);
+
+        // スキャン画面を非表示にして結果画面を表示
+        scanner.style.display = "none";
+        resultScreen.style.display = "block";
+      } else {
+        alert("QRコードの形式が正しくありません！");
+      }
     }
+
+    // スキャンが完了したらフラグをリセットして次のスキャンに備える
+    setTimeout(() => {
+      isScanning = false;
+    }, 1000); // 少し時間をおいて再スキャン
+  }
+
+  // 再帰的にscanQRCodeを呼び出してスキャンを継続
+  requestAnimationFrame(scanQRCode);
+}
 
     // Googleスプレッドシートにデータを送信する関数
     function sendDataToGoogleSheets(id, name, timestamp, leave) {
