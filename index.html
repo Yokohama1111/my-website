@@ -241,11 +241,13 @@
           }
         }
 
+        // スキャンが完了したらフラグをリセットして次のスキャンに備える
         setTimeout(() => {
           isScanning = false;
-        }, 1000);
+        }, 1000); // 少し時間をおいて再スキャン
       }
 
+      // 再帰的にscanQRCodeを呼び出してスキャンを継続
       requestAnimationFrame(scanQRCode);
     }
 
