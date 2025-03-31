@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -109,14 +107,11 @@
   <div id="resultScreen">
     <h3>KYOKEI</h3>
     <h3>横浜芸術高等専修学校</h3>
-    <h2>登校を記録しました</h2>
+    <h2 id="resultMessage">登校を記録しました</h2>
     <ul id="resultList"></ul>
     <button id="downloadCSVButton">CSVをダウンロード</button>
     <button id="backButton">トップ画面へ戻る</button>
   </div>
-</body>
-</html>
-
 
   <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
   <script>
@@ -150,8 +145,8 @@
     return;
   }
 
-  const header = "ID,名前,タイムスタンプ\n";
-  const rows = attendanceRecords.map(record => `${record.id},${record.name},${record.timestamp}`).join("\n");
+  const header = "ID,名前,タイムスタンプ,状態\n";
+  const rows = attendanceRecords.map(record => `${record.id},${record.name},${record.timestamp},${record.status}`).join("\n");
   const csvContent = header + rows;
 
   // UTF-8 BOMを追加して、文字化けを防ぐ
@@ -171,9 +166,6 @@
   a.click();
   document.body.removeChild(a);
 }
-
-
-
 
     // CSVダウンロードボタンのイベントリスナーを設定
     downloadCSVButton.addEventListener("click", downloadCSV);
@@ -213,25 +205,33 @@
 
     if (code) {
       const qrData = code.data;
-      const [id, name] = qrData.split(",");  // QRコードからIDと名前を分ける
+      const [id, name, status] = qrData.split(",");  // QRコードからID, 名前, 状態を分ける
       const timestamp = new Date().toLocaleString();  // 現在の時刻を取得
 
-      if (id && name) {
-        // 出席記録にIDと名前、タイムスタンプを追加
-        attendanceRecords.push({ id, name, timestamp });
+      if (id && name && status) {
+        // 出席記録にID、名前、状態、タイムスタンプを追加
+        attendanceRecords.push({ id, name, status, timestamp });
         localStorage.setItem("attendanceRecords", JSON.stringify(attendanceRecords));
 
         resultList.innerHTML = "";
         const listItem = document.createElement("li");
-        // ID, 名前, 時間をこのフォーマットで表示
-        listItem.textContent = `${id}, ${name}, 時間: ${timestamp}`;
+        // ID, 名前, 状態, 時間を表示
+        listItem.textContent = `${id}, ${name}, 状態: ${status}, 時間: ${timestamp}`;
         resultList.appendChild(listItem);
 
         // スプレッドシートにデータを送信
-        sendDataToGoogleSheets(id, name, timestamp);
+        sendDataToGoogleSheets(id, name, status, timestamp);
 
         scanner.style.display = "none";
         resultScreen.style.display = "block";
+
+        // ステータスメッセージの表示
+        const resultMessage = document.getElementById("resultMessage");
+        if (status === "登校") {
+          resultMessage.textContent = "登校を記録しました";
+        } else if (status === "早退") {
+          resultMessage.textContent = "早退を記録しました";
+        }
       } else {
         alert("QRコードの形式が正しくありません！");
       }
@@ -246,13 +246,10 @@
   requestAnimationFrame(scanQRCode); // 継続的にスキャン
 }
 
-
-
-// Googleスプレッドシートにデータを送信する関数
-function sendDataToGoogleSheets(id, name, timestamp) {
+    // Googleスプレッドシートにデータを送信する関数
+function sendDataToGoogleSheets(id, name, status, timestamp) {
   const scriptUrl = "https://script.google.com/macros/s/AKfycby2-h7jMj2zV_4wL9ULobWSVPmhndSxjT77WMA3OAjavz_y4MG_YgZlsT5DERupIBZB/exec"; // ここにスクリプトURLを入れてください
- 　　　　　　　　　　　 
-  const url = `${scriptUrl}?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&timestamp=${encodeURIComponent(timestamp)}`;
+  const url = `${scriptUrl}?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&status=${encodeURIComponent(status)}&timestamp=${encodeURIComponent(timestamp)}`;
 
   fetch(url)
     .then(response => response.text())
@@ -263,7 +260,6 @@ function sendDataToGoogleSheets(id, name, timestamp) {
       console.error('エラーが発生しました:', error);
     });
 }
-
 
     // QRコードスキャン画面の戻るボタンの動作
 backToStartButton.addEventListener("click", () => {
