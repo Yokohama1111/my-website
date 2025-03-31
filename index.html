@@ -149,7 +149,7 @@
   }
 
   const header = "ID,名前,タイムスタンプ\n";
-  const rows = attendanceRecords.map(record => `${record.id},${record.name},${record.timestamp}`).join("\n");
+  const rows = attendanceRecords.map(record => ${record.id},${record.name},${record.timestamp}).join("\n");
   const csvContent = header + rows;
 
   // UTF-8 BOMを追加して、文字化けを防ぐ
@@ -222,7 +222,7 @@
         resultList.innerHTML = "";
         const listItem = document.createElement("li");
         // ID, 名前, 時間をこのフォーマットで表示
-        listItem.textContent = `${id}, ${name}, 時間: ${timestamp}`;
+        listItem.textContent = ${id}, ${name}, 時間: ${timestamp};
         resultList.appendChild(listItem);
 
         // スプレッドシートにデータを送信
@@ -250,7 +250,7 @@
 function sendDataToGoogleSheets(id, name, timestamp) {
   const scriptUrl = "https://script.google.com/macros/s/AKfycby2-h7jMj2zV_4wL9ULobWSVPmhndSxjT77WMA3OAjavz_y4MG_YgZlsT5DERupIBZB/exec"; // ここにスクリプトURLを入れてください
  　　　　　　　　　　　 
-  const url = `${scriptUrl}?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&timestamp=${encodeURIComponent(timestamp)}`;
+  const url = ${scriptUrl}?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&timestamp=${encodeURIComponent(timestamp)};
 
   fetch(url)
     .then(response => response.text())
