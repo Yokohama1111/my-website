@@ -31,10 +31,23 @@
     }
     
     #arrivalButton, #departureButton {
-      display: inline-block; /* 横並び */
-      margin: 10px; /* ボタン間の余白 */
-    }　
+  width: 120px;
+  height: 120px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  font-size: 48px;       /* ← 文字をかなり大きく */
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 20px;
+  padding: 0;            /* ← 余白をゼロにして文字を最大表示 */
+  display: flex;         /* ← 中央寄せ用 */
+  align-items: center;   /* ← 縦中央寄せ */
+  justify-content: center; /* ← 横中央寄せ */
+  text-align: center;
+}
 
+    
     h1 {
       font-size: 2.5rem;
       margin-bottom: 20px;
@@ -120,15 +133,18 @@
 </head>
 <body>
   <div id="startScreen">
-    <h2>KYOKEI</h2>
-    <h2>横浜芸術高等専修学校</h2>
-    <h1>登校記録</h1>
+  <h2>KYOKEI</h2>
+  <h2>横浜芸術高等専修学校</h2>
+  <h1>登校記録</h1>
+
+  <!-- ここを変更 -->
+  <div style="display: flex; justify-content: center; gap: 50px; flex-wrap: wrap;">
     <button id="arrivalButton">登校</button>
     <button id="departureButton">下校</button>
-    <button id="downloadCSVTopButton">CSVダウンロード</button>
   </div>
 
-
+  <button id="downloadCSVTopButton">CSVダウンロード</button>
+  </div>
 
   <div id="scanner">
     <h2>QRコードをかざしてください</h2>
