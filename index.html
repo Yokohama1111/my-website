@@ -106,8 +106,15 @@
     }
 
     video {
-      border: 1px solid black;
-    }
+  width: 320px;
+  height: 240px;
+  border: 4px solid #007bff;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto;
+}
+
   </style>
 </head>
 <body>
@@ -125,11 +132,16 @@
   </div>
 
   <div id="scanner">
-    <h2>QRコードをかざしてください</h2>
-    <video id="preview" width="100%" height="100%" playsinline></video>
-    <p id="scanResult">横浜芸術高等専修学校</p>
-    <button id="backToStartButton">戻る</button>
+  <h2>QRコードをかざしてください</h2>
+  <div style="position: relative; display: flex; justify-content: center;">
+    <video id="preview" width="320" height="240" playsinline></video>
+    <!-- クロスヘア風の枠 -->
+    <div style="position: absolute; width: 160px; height: 160px; border: 2px dashed red; top: 40px;"></div>
   </div>
+  <p id="scanResult">横浜芸術高等専修学校</p>
+  <button id="backToStartButton">戻る</button>
+</div>
+
 
   <div id="resultScreen">
     <h3>KYOKEI</h3>
@@ -187,47 +199,61 @@
 
     let isScanning = false;
     function scanQRCode() {
-      if (video.readyState === video.HAVE_ENOUGH_DATA && !isScanning) {
-        isScanning = true;
+  if (video.readyState === video.HAVE_ENOUGH_DATA && !isScanning) {
+    isScanning = true;
 
-        canvasElement.height = video.videoHeight;
-        canvasElement.width = video.videoWidth;
-        canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-        let imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-        let code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
+    canvasElement.height = video.videoHeight;
+    canvasElement.width = video.videoWidth;
+    canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
 
-        if (code) {
-          const id = code.data;
-          const timestamp = new Date().toLocaleString();
-          const type = currentType;
+    // 中央部分だけを切り取ってQRコードを読み取る（例: 横中央 50% 幅, 縦中央 50% 高さ）
+    const cropWidth = canvasElement.width * 0.5;
+    const cropHeight = canvasElement.height * 0.5;
+    const cropX = (canvasElement.width - cropWidth) / 2;
+    const cropY = (canvasElement.height - cropHeight) / 2;
 
-          if (id && type) {
-            attendanceRecords.push({ id, timestamp, type });
-            localStorage.setItem("attendanceRecords", JSON.stringify(attendanceRecords));
+    let imageData = canvas.getImageData(cropX, cropY, cropWidth, cropHeight);
+    let code = jsQR(imageData.data, cropWidth, cropHeight);
 
-            resultList.innerHTML = "";
-            const listItem = document.createElement("li");
-            listItem.textContent = `学籍番号: ${id}, 時間: ${timestamp}, 種別: ${type}`;
-            resultList.appendChild(listItem);
+    if (code) {
+      const id = code.data;
+      const timestamp = new Date().toLocaleString();
+      const type = currentType;
 
-            recordTypeText.textContent = `${type}を記録しました`;
+      if (id && type) {
+        attendanceRecords.push({ id, timestamp, type });
+        localStorage.setItem("attendanceRecords", JSON.stringify(attendanceRecords));
 
-            sendDataToGoogleSheets(id, timestamp, type);
+        resultList.innerHTML = "";
+        const listItem = document.createElement("li");
+        listItem.textContent = `学籍番号: ${id}, 時間: ${timestamp}, 種別: ${type}`;
+        resultList.appendChild(listItem);
 
-            scanner.style.display = "none";
-            resultScreen.style.display = "block";
-          } else {
-            alert("QRコードの形式が正しくありません！");
-          }
+        recordTypeText.textContent = `${type}を記録しました`;
+
+        sendDataToGoogleSheets(id, timestamp, type);
+
+        scanner.style.display = "none";
+        resultScreen.style.display = "block";
+
+        // カメラ停止
+        if (video.srcObject) {
+          video.srcObject.getTracks().forEach(track => track.stop());
+          video.srcObject = null;
         }
-
-        setTimeout(() => {
-          isScanning = false;
-        }, 1000);
+      } else {
+        alert("QRコードの形式が正しくありません！");
       }
-
-      requestAnimationFrame(scanQRCode);
     }
+
+    setTimeout(() => {
+      isScanning = false;
+    }, 500); // スキャン間隔を短くして高速化
+  }
+
+  requestAnimationFrame(scanQRCode);
+}
+
 
     function sendDataToGoogleSheets(id, timestamp, type) {
       const scriptUrl = "https://script.google.com/macros/s/AKfycby2-h7jMj2zV_4wL9ULobWSVPmhndSxjT77WMA3OAjavz_y4MG_YgZlsT5DERupIBZB/exec";
